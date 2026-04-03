@@ -1,0 +1,7 @@
+import "dotenv/config";
+
+// This file was originally generated for Prisma 7.
+// Prisma 6 uses schema.prisma datasource block directly.
+// Keeping this file minimal for compatibility.
+
+export default {};
