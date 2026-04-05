@@ -45,6 +45,11 @@ export type CanvasComponent = {
   props: ComponentProps
   logic?: string
   position: number
+  // Free-placement canvas geometry
+  x?: number
+  y?: number
+  width?: number
+  height?: number
   createdAt: string
   updatedAt: string
 }

@@ -26,7 +26,7 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { id: projectId } = await params
     const body = await request.json()
-    const { type, label, props, logic, position } = body
+    const { type, label, props, logic, position, x, y, width, height } = body
 
     const component = await prisma.component.create({
       data: {
@@ -36,6 +36,10 @@ export async function POST(request: Request, { params }: Params) {
         props: JSON.stringify(props || {}),
         logic: logic || null,
         position: position ?? 0,
+        x: x ?? null,
+        y: y ?? null,
+        width: width ?? null,
+        height: height ?? null,
       },
     })
 

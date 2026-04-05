@@ -8,7 +8,7 @@ export async function PATCH(request: Request, { params }: Params) {
   try {
     const { componentId } = await params
     const body = await request.json()
-    const { label, props, logic, position } = body
+    const { label, props, logic, position, x, y, width, height } = body
 
     const component = await prisma.component.update({
       where: { id: componentId },
@@ -17,6 +17,10 @@ export async function PATCH(request: Request, { params }: Params) {
         ...(props !== undefined && { props: JSON.stringify(props) }),
         ...(logic !== undefined && { logic }),
         ...(position !== undefined && { position }),
+        ...(x !== undefined && { x }),
+        ...(y !== undefined && { y }),
+        ...(width !== undefined && { width }),
+        ...(height !== undefined && { height }),
       },
     })
 

@@ -31,6 +31,10 @@ export async function POST(_req: Request, { params }: Params) {
       props: JSON.parse(c.props),
       logic: c.logic ?? undefined,
       position: c.position,
+      x: c.x ?? undefined,
+      y: c.y ?? undefined,
+      width: c.width ?? undefined,
+      height: c.height ?? undefined,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
     }))

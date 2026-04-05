@@ -29,6 +29,10 @@ model Component {
   props     String   // JSON string
   logic     String?  // JS/TS code
   position  Int      @default(0)
+  x         Int?
+  y         Int?
+  width     Int?
+  height    Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

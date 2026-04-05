@@ -1,18 +1,27 @@
 import { create } from 'zustand'
 import { CanvasComponent, ComponentProps, Project, StackConfig } from './types'
 
+type GeometryUpdate = {
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+}
+
 type CanvasStore = {
   project: Project | null
   components: CanvasComponent[]
   selectedId: string | null
   logicEditorOpen: boolean
   logicEditorTarget: string | null
+  canvasHeight: number
 
   setProject: (project: Project) => void
   setComponents: (components: CanvasComponent[]) => void
   addComponent: (component: CanvasComponent) => void
   updateComponent: (id: string, updates: Partial<CanvasComponent>) => void
   updateComponentProps: (id: string, props: Partial<ComponentProps>) => void
+  updateComponentGeometry: (id: string, geometry: GeometryUpdate) => void
   removeComponent: (id: string) => void
   reorderComponents: (from: number, to: number) => void
   selectComponent: (id: string | null) => void
@@ -20,6 +29,7 @@ type CanvasStore = {
   closeLogicEditor: () => void
   saveLogic: (id: string, logic: string) => void
   updateProjectStack: (stack: StackConfig) => void
+  setCanvasHeight: (height: number) => void
 }
 
 export const useCanvasStore = create<CanvasStore>((set) => ({
@@ -28,6 +38,7 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   selectedId: null,
   logicEditorOpen: false,
   logicEditorTarget: null,
+  canvasHeight: 900,
 
   setProject: (project) => set({ project }),
   setComponents: (components) => set({ components }),
@@ -48,6 +59,13 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     set((state) => ({
       components: state.components.map((c) =>
         c.id === id ? { ...c, props: { ...c.props, ...props } } : c
+      ),
+    })),
+
+  updateComponentGeometry: (id, geometry) =>
+    set((state) => ({
+      components: state.components.map((c) =>
+        c.id === id ? { ...c, ...geometry } : c
       ),
     })),
 
@@ -86,4 +104,6 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     set((state) => ({
       project: state.project ? { ...state.project, stack } : null,
     })),
+
+  setCanvasHeight: (height) => set({ canvasHeight: height }),
 }))
