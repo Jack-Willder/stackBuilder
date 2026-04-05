@@ -37,7 +37,7 @@ export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params
     const body = await request.json()
-    const { name, description, stack } = body
+    const { name, description, stack, canvasHeight, canvasBackground } = body
 
     const project = await prisma.project.update({
       where: { id },
@@ -45,6 +45,10 @@ export async function PATCH(request: Request, { params }: Params) {
         ...(name && { name }),
         ...(description !== undefined && { description }),
         ...(stack && { stack: JSON.stringify(stack) }),
+        // @ts-ignore
+        ...(canvasHeight !== undefined && { canvasHeight }),
+        // @ts-ignore
+        ...(canvasBackground !== undefined && { canvasBackground }),
       },
     })
 

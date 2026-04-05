@@ -31,16 +31,28 @@ export async function POST(_req: Request, { params }: Params) {
       props: JSON.parse(c.props),
       logic: c.logic ?? undefined,
       position: c.position,
+      // @ts-ignore
       x: c.x ?? undefined,
+      // @ts-ignore
       y: c.y ?? undefined,
+      // @ts-ignore
       width: c.width ?? undefined,
+      // @ts-ignore
       height: c.height ?? undefined,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
     }))
 
     // Generate files
-    const files = generateProject(project.name, components, stack)
+    const files = generateProject(
+      project.name, 
+      components, 
+      stack, 
+      // @ts-ignore
+      project.canvasHeight || 900, 
+      // @ts-ignore
+      project.canvasBackground || 'solid:#ffffff'
+    )
 
     // Return as JSON (client will use JSZip to create the zip)
     return NextResponse.json({

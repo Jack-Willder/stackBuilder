@@ -9,12 +9,19 @@ const components: CanvasComponent[] = [
     projectId: 'test',
     type: 'Button',
     label: 'My Button',
-    props: { text: 'Click Me', color: 'red' },
     position: 0,
     x: 100,
     y: 150,
     width: 200,
     height: 60,
+    props: { 
+      text: 'Click Me', 
+      color: '#ffffff',
+      backgroundColor: '#6366f1',
+      opacity: '80',
+      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+      backdropBlur: '10'
+    },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }

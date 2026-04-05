@@ -15,9 +15,11 @@ model Project {
   name        String
   description String?
   stack       String      // JSON string: { frontend, backend, database }
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  components  Component[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  canvasHeight     Int         @default(900)
+  canvasBackground String?     // "solid:#ffffff" or "gradient:linear-gradient(...)"
+  components       Component[]
 }
 
 model Component {

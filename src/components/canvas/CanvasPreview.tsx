@@ -17,6 +17,11 @@ export default function CanvasPreview({ component }: { component: CanvasComponen
     height: p.height || undefined,
     borderRadius: p.borderRadius || undefined,
     borderColor: p.borderColor || undefined,
+    borderWidth: p.borderWidth || undefined,
+    borderStyle: p.borderStyle || (p.borderColor || p.borderWidth ? 'solid' : undefined),
+    opacity: p.opacity ? Number(p.opacity) / 100 : undefined,
+    boxShadow: p.boxShadow || undefined,
+    backdropFilter: p.backdropBlur ? `blur(${p.backdropBlur}px)` : undefined,
     textAlign: (p.align as React.CSSProperties['textAlign']) || undefined,
   }
 

@@ -179,6 +179,46 @@ const NUM_INPUT_STYLE: React.CSSProperties = {
   outline: 'none',
 }
 
+function ColorRow({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) {
+  return (
+    <div style={{ marginBottom: '0.75rem' }}>
+      <label style={LABEL_STYLE}>{label}</label>
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ position: 'relative', width: 28, height: 28, borderRadius: 6, border: '1px solid var(--color-border)', overflow: 'hidden', background: value || 'transparent' }}>
+          <input
+            type="color"
+            value={value || '#000000'}
+            onChange={(e) => onChange(e.target.value)}
+            style={{ position: 'absolute', top: -5, left: -5, width: 40, height: 40, cursor: 'pointer', opacity: 0 }}
+          />
+        </div>
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="#000000"
+          className="input-field"
+          style={{ flex: 1, fontSize: '0.72rem', height: 28, padding: '0 8px' }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function Section({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon?: any }) {
+  return (
+    <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.50rem', marginBottom: '0.75rem' }}>
+        {Icon && <Icon size={12} style={{ color: 'var(--color-accent)', opacity: 0.8 }} />}
+        <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text)' }}>
+          {title}
+        </span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
 export default function PropertyPanel({
   component,
   onSave,
@@ -191,43 +231,130 @@ export default function PropertyPanel({
   onToggleRatioLock: () => void
 }) {
   const store = useCanvasStore()
+  const [savingProject, setSavingProject] = useState(false)
+
+  const handleSaveProject = async () => {
+    if (!store.project) return
+    setSavingProject(true)
+    try {
+      await fetch(`/api/projects/${store.project.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          canvasHeight: store.canvasHeight,
+          canvasBackground: store.canvasBackground,
+        }),
+      })
+      // Success toast is handled via component save usually, 
+      // but here we just toggle the state.
+    } catch (error) {
+      console.error('Failed to save project:', error)
+    } finally {
+      setSavingProject(false)
+    }
+  }
 
   if (!component) {
+    const bgParts = (store.canvasBackground || 'solid:#ffffff').split(':', 2)
+    const bgType = bgParts[0] as 'solid' | 'gradient'
+    const bgValue = bgParts[1]
+
+    // Handle background changes
+    const updateBg = (type: 'solid' | 'gradient', value: string) => {
+      store.setCanvasBackground(`${type}:${value}`)
+    }
+
     return (
       <div style={{ padding: '0.75rem', overflowY: 'auto', height: '100%' }}>
         {/* Canvas Header */}
-        <div
-          style={{
-            padding: '0.6rem 0.75rem',
-            borderRadius: 9,
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid var(--color-border)',
-            marginBottom: '1.25rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-          }}
-        >
+        <div style={{ padding: '0.6rem 0.75rem', borderRadius: 9, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Settings2 size={15} style={{ color: 'var(--color-accent)' }} />
           <div style={{ fontWeight: 700, fontSize: '0.83rem' }}>Canvas Properties</div>
         </div>
 
-        {/* Project Info */}
-        {store.project && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={LABEL_STYLE}>Project Name</label>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', padding: '0.5rem 0', borderBottom: '1px solid var(--color-border)' }}>
-              {store.project.name}
-            </div>
-          </div>
-        )}
-
+        {/* Global Save */}
         <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <label style={LABEL_STYLE}>Artboard Height</label>
-            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{store.canvasHeight}px</span>
+          <button 
+            onClick={handleSaveProject} 
+            disabled={savingProject} 
+            className="btn-primary" 
+            style={{ width: '100%', justifyContent: 'center', gap: '0.5rem' }}
+          >
+            {savingProject ? <Save size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={14} />}
+            Save Project Settings
+          </button>
+        </div>
+
+        <Section title="Project Info">
+          {store.project && (
+            <div style={{ marginBottom: '0.5rem' }}>
+              <label style={LABEL_STYLE}>Project Name</label>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-text)', padding: '0.4rem 0' }}>
+                {store.project.name}
+              </div>
+            </div>
+          )}
+        </Section>
+
+        <Section title="Artboard Background">
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={LABEL_STYLE}>Background Type</label>
+            <select
+              value={bgType}
+              onChange={(e) => {
+                const newType = e.target.value as 'solid' | 'gradient'
+                const defaultValue = newType === 'solid' ? '#ffffff' : 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)'
+                updateBg(newType, defaultValue)
+              }}
+              className="input-field"
+              style={{ fontSize: '0.75rem', marginBottom: '0.75rem' }}
+            >
+              <option value="solid" style={{ background: 'var(--color-surface)' }}>Solid Color</option>
+              <option value="gradient" style={{ background: 'var(--color-surface)' }}>Linear Gradient</option>
+            </select>
+
+            {bgType === 'solid' ? (
+              <ColorRow
+                label="Pick Color"
+                value={bgValue}
+                onChange={(v) => updateBg('solid', v)}
+              />
+            ) : (
+              <div>
+                <label style={LABEL_STYLE}>Gradient CSS</label>
+                <textarea
+                  value={bgValue}
+                  onChange={(e) => updateBg('gradient', e.target.value)}
+                  placeholder="linear-gradient(...)"
+                  className="input-field"
+                  rows={3}
+                  style={{ fontSize: '0.72rem', fontFamily: 'monospace' }}
+                />
+                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+                   <button 
+                    onClick={() => updateBg('gradient', 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)')}
+                    style={{ fontSize: '0.65rem', padding: '0.3rem 0.5rem', borderRadius: 4, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', cursor: 'pointer' }}
+                   >
+                     Indigo
+                   </button>
+                   <button 
+                    onClick={() => updateBg('gradient', 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)')}
+                    style={{ fontSize: '0.65rem', padding: '0.3rem 0.5rem', borderRadius: 4, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', cursor: 'pointer' }}
+                   >
+                     Sunset
+                   </button>
+                </div>
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        </Section>
+
+        <Section title="Artboard Size">
+          <div style={{ marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <label style={LABEL_STYLE}>Height</label>
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{store.canvasHeight}px</span>
+            </div>
             <input
               type="range"
               min="400"
@@ -235,26 +362,21 @@ export default function PropertyPanel({
               step="50"
               value={store.canvasHeight}
               onChange={(e) => store.setCanvasHeight(Number(e.target.value))}
-              style={{ flex: 1, accentColor: 'var(--color-accent)', cursor: 'pointer' }}
+              style={{ width: '100%', accentColor: 'var(--color-accent)', cursor: 'pointer', marginBottom: '0.5rem' }}
             />
             <input
               type="number"
               value={store.canvasHeight}
               onChange={(e) => store.setCanvasHeight(Number(e.target.value))}
-              style={{ ...NUM_INPUT_STYLE, width: 75, textAlign: 'center' }}
+              style={{ ...NUM_INPUT_STYLE, textAlign: 'center' }}
             />
           </div>
-          <p style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
-            Adjust the vertical scroll area of your design.
-          </p>
-        </div>
+        </Section>
 
-        <div className="divider" style={{ marginBottom: '1.5rem' }} />
-
-        <div style={{ padding: '1rem', border: '1px dashed var(--color-border)', borderRadius: 10, textAlign: 'center' }}>
-          <Plus size={20} style={{ color: 'var(--color-text-muted)', marginBottom: '0.5rem', opacity: 0.5 }} />
-          <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
-            Select an element on the canvas to configure its specific styles and logic.
+        <div style={{ padding: '1.25rem', border: '1px dashed var(--color-border)', borderRadius: 10, textAlign: 'center', marginTop: '1rem' }}>
+          <Plus size={18} style={{ color: 'var(--color-text-muted)', marginBottom: '0.5rem', opacity: 0.4 }} />
+          <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+            Select an element to edit its styles
           </p>
         </div>
       </div>
@@ -263,10 +385,12 @@ export default function PropertyPanel({
 
   const fields = COMPONENT_PROPS[component.type] || []
   const props = component.props as Record<string, string>
-  const x = component.x ?? 40
-  const y = component.y ?? 40
-  const width = component.width ?? 320
-  const height = component.height ?? 120
+  
+  // Layout helpers
+  const x = Math.round(component.x ?? 40)
+  const y = Math.round(component.y ?? 40)
+  const width = Math.round(component.width ?? 320)
+  const height = Math.round(component.height ?? 120)
   const ratio = width / height
 
   const handleGeom = (field: 'x' | 'y' | 'width' | 'height', val: number) => {
@@ -280,149 +404,208 @@ export default function PropertyPanel({
     }
   }
 
+  // Filter content props (e.g., text, src) from style props
+  const contentProps = fields.filter(f => ['text', 'src', 'alt', 'placeholder'].includes(f.key as string))
+  const otherProps = fields.filter(f => !['text', 'src', 'alt', 'placeholder', 'backgroundColor', 'borderColor', 'borderRadius', 'color', 'fontSize', 'fontWeight', 'padding', 'margin'].includes(f.key as string))
+
   return (
-    <div style={{ padding: '0.75rem', overflowY: 'auto', height: '100%' }}>
-      {/* Component type header */}
-      <div
-        style={{
-          padding: '0.6rem 0.75rem',
-          borderRadius: 9,
-          background: 'rgba(99,102,241,0.08)',
-          border: '1px solid rgba(99,102,241,0.2)',
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-        }}
-      >
-        <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-accent)', flexShrink: 0 }} />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: '0.83rem' }}>{component.type}</div>
-          <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {component.id.slice(0, 14)}…
+    <div style={{ padding: '0.75rem', overflowY: 'auto', height: '100%', paddingBottom: '5rem' }}>
+      {/* Header */}
+      <div style={{ padding: '0.6rem 0.75rem', borderRadius: 9, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-accent)' }} />
+        <span style={{ fontWeight: 700, fontSize: '0.83rem' }}>{component.type}</span>
+      </div>
+
+      {/* Actions (Primary at top) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <button onClick={onSave} className="btn-primary" style={{ justifyContent: 'center', fontSize: '0.75rem', padding: '0.45rem' }}>
+          <Save size={12} />
+          Save
+        </button>
+        <button onClick={() => store.openLogicEditor(component.id)} className="btn-secondary" style={{ justifyContent: 'center', fontSize: '0.75rem', padding: '0.45rem' }}>
+          <Code2 size={12} />
+          Logic
+        </button>
+      </div>
+
+      {/* ── Layout ── */}
+      <Section title="Layout">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          <div>
+            <label style={LABEL_STYLE}>X</label>
+            <input type="number" value={x} onChange={(e) => handleGeom('x', Number(e.target.value))} style={NUM_INPUT_STYLE} />
+          </div>
+          <div>
+            <label style={LABEL_STYLE}>Y</label>
+            <input type="number" value={y} onChange={(e) => handleGeom('y', Number(e.target.value))} style={NUM_INPUT_STYLE} />
           </div>
         </div>
-      </div>
-
-      {/* ── Layout / Geometry ── */}
-      <p style={LABEL_STYLE}>Layout</p>
-
-      {/* X / Y row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <div>
-          <label style={LABEL_STYLE}>X</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          <div>
+            <label style={LABEL_STYLE}>W</label>
+            <input type="number" value={width} onChange={(e) => handleGeom('width', Number(e.target.value))} style={NUM_INPUT_STYLE} />
+          </div>
+          <div>
+            <label style={{ ...LABEL_STYLE, display: 'flex', alignItems: 'center' }}>
+              H
+              <button onClick={onToggleRatioLock} style={{ marginLeft: 'auto', padding: 0.5, background: 'none', border: 'none', cursor: 'pointer', color: aspectRatioLocked ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                {aspectRatioLocked ? <Lock size={10} /> : <Unlock size={10} />}
+              </button>
+            </label>
+            <input type="number" value={height} onChange={(e) => handleGeom('height', Number(e.target.value))} style={NUM_INPUT_STYLE} />
+          </div>
+        </div>
+        <div style={{ marginTop: '0.5rem' }}>
+          <label style={LABEL_STYLE}>Corner Radius</label>
           <input
-            type="number"
-            value={Math.round(x)}
-            onChange={(e) => handleGeom('x', Number(e.target.value))}
-            style={NUM_INPUT_STYLE}
+            type="text"
+            value={props.borderRadius || ''}
+            onChange={(e) => store.updateComponentProps(component.id, { borderRadius: e.target.value })}
+            placeholder="0px"
+            className="input-field"
+            style={{ fontSize: '0.72rem' }}
           />
         </div>
-        <div>
-          <label style={LABEL_STYLE}>Y</label>
-          <input
-            type="number"
-            value={Math.round(y)}
-            onChange={(e) => handleGeom('y', Number(e.target.value))}
-            style={NUM_INPUT_STYLE}
-          />
-        </div>
-      </div>
+      </Section>
 
-      {/* W / H row with ratio lock */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.25rem' }}>
-        <div>
-          <label style={LABEL_STYLE}>W</label>
-          <input
-            type="number"
-            value={Math.round(width)}
-            onChange={(e) => handleGeom('width', Number(e.target.value))}
-            style={NUM_INPUT_STYLE}
-          />
-        </div>
-        <div>
-          <label style={{ ...LABEL_STYLE, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            H
-            <button
-              onClick={onToggleRatioLock}
-              title={aspectRatioLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
-              style={{
-                marginLeft: 'auto',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 16, height: 16,
-                border: 'none',
-                borderRadius: 3,
-                background: aspectRatioLocked ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.06)',
-                color: aspectRatioLocked ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            >
-              {aspectRatioLocked ? <Lock size={9} /> : <Unlock size={9} />}
-            </button>
-          </label>
-          <input
-            type="number"
-            value={Math.round(height)}
-            onChange={(e) => handleGeom('height', Number(e.target.value))}
-            style={NUM_INPUT_STYLE}
-          />
-        </div>
-      </div>
-
-      {/* Label */}
-      <div style={{ marginBottom: '0.75rem' }}>
-        <label style={LABEL_STYLE}>Label</label>
-        <input
-          type="text"
-          value={component.label}
-          onChange={(e) => store.updateComponent(component.id, { label: e.target.value })}
-          className="input-field"
-          style={{ fontSize: '0.75rem' }}
-        />
-      </div>
-
-      <div className="divider" style={{ marginBottom: '1rem' }} />
-
-      {/* Appearance props */}
-      {fields.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-          {fields.map((field) => (
-            <div key={field.key}>
-              <label style={LABEL_STYLE}>{field.label}</label>
-              <PropInput
-                field={field}
-                value={props[field.key] || ''}
-                onChange={(value) => store.updateComponentProps(component.id, { [field.key]: value })}
-              />
+      {/* ── Content ── */}
+      {contentProps.length > 0 && (
+        <Section title="Content">
+          {contentProps.map(f => (
+            <div key={f.key} style={{ marginBottom: '0.75rem' }}>
+              <label style={LABEL_STYLE}>{f.label}</label>
+              <PropInput field={f} value={props[f.key] || ''} onChange={(v) => store.updateComponentProps(component.id, { [f.key]: v })} />
             </div>
           ))}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-text-muted)', fontSize: '0.78rem' }}>
-          <Info size={13} />
-          No extra properties
-        </div>
+        </Section>
       )}
 
-      {/* Actions */}
-      <button
-        onClick={onSave}
-        className="btn-primary"
-        style={{ width: '100%', marginTop: '1.5rem', justifyContent: 'center' }}
-      >
-        <Save size={13} />
-        Save Changes
-      </button>
+      {/* ── Fill ── */}
+      <Section title="Fill">
+        <ColorRow
+          label="Background"
+          value={props.backgroundColor || ''}
+          onChange={(v) => store.updateComponentProps(component.id, { backgroundColor: v })}
+        />
+        <div style={{ marginTop: '0.5rem' }}>
+          <label style={{ ...LABEL_STYLE, display: 'flex', justifyContent: 'space-between' }}>
+            Opacity <span>{props.opacity || '100'}%</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={props.opacity || '100'}
+            onChange={(e) => store.updateComponentProps(component.id, { opacity: e.target.value })}
+            style={{ width: '100%', accentColor: 'var(--color-accent)', cursor: 'pointer' }}
+          />
+        </div>
+      </Section>
 
-      <button
-        onClick={() => store.openLogicEditor(component.id)}
-        className="btn-secondary"
-        style={{ width: '100%', marginTop: '0.5rem', justifyContent: 'center', fontSize: '0.8rem' }}
-      >
-        <Code2 size={13} />
-        Logic Editor
-      </button>
+      {/* ── Typography ── */}
+      <Section title="Typography">
+        <ColorRow
+          label="Text Color"
+          value={props.color || ''}
+          onChange={(v) => store.updateComponentProps(component.id, { color: v })}
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <div>
+            <label style={LABEL_STYLE}>Size</label>
+            <input
+              type="text"
+              value={props.fontSize || ''}
+              onChange={(e) => store.updateComponentProps(component.id, { fontSize: e.target.value })}
+              placeholder="14px"
+              className="input-field"
+              style={{ fontSize: '0.72rem' }}
+            />
+          </div>
+          <div>
+            <label style={LABEL_STYLE}>Weight</label>
+            <select
+              value={props.fontWeight || '400'}
+              onChange={(e) => store.updateComponentProps(component.id, { fontWeight: e.target.value })}
+              className="input-field"
+              style={{ fontSize: '0.72rem' }}
+            >
+              {['300', '400', '500', '600', '700', '800'].map(w => <option key={w} value={w}>{w}</option>)}
+            </select>
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Stroke ── */}
+      <Section title="Stroke">
+        <ColorRow
+          label="Border Color"
+          value={props.borderColor || ''}
+          onChange={(v) => store.updateComponentProps(component.id, { borderColor: v })}
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.5rem' }}>
+          <div>
+            <label style={LABEL_STYLE}>Weight</label>
+            <input
+              type="text"
+              value={props.borderWidth || ''}
+              onChange={(e) => store.updateComponentProps(component.id, { borderWidth: e.target.value })}
+              placeholder="1px"
+              className="input-field"
+              style={{ fontSize: '0.72rem' }}
+            />
+          </div>
+          <div>
+            <label style={LABEL_STYLE}>Style</label>
+            <select
+              value={props.borderStyle || 'solid'}
+              onChange={(e) => store.updateComponentProps(component.id, { borderStyle: e.target.value })}
+              className="input-field"
+              style={{ fontSize: '0.72rem' }}
+            >
+              {['solid', 'dashed', 'dotted', 'none'].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Effects ── */}
+      <Section title="Effects">
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={LABEL_STYLE}>Drop Shadow</label>
+          <input
+            type="text"
+            value={props.boxShadow || ''}
+            onChange={(e) => store.updateComponentProps(component.id, { boxShadow: e.target.value })}
+            placeholder="0 4px 6px -1px rgb(0 0 0 / 0.1)"
+            className="input-field"
+            style={{ fontSize: '0.72rem' }}
+          />
+        </div>
+        <div>
+          <label style={LABEL_STYLE}>Backdrop Blur (px)</label>
+          <input
+            type="number"
+            value={props.backdropBlur || ''}
+            onChange={(e) => store.updateComponentProps(component.id, { backdropBlur: e.target.value })}
+            placeholder="0"
+            className="input-field"
+            style={{ fontSize: '0.72rem' }}
+          />
+        </div>
+      </Section>
+
+      {/* ── Other Props ── */}
+      {otherProps.length > 0 && (
+        <Section title="Extra Props">
+          {otherProps.map(f => (
+            <div key={f.key} style={{ marginBottom: '0.75rem' }}>
+              <label style={LABEL_STYLE}>{f.label}</label>
+              <PropInput field={f} value={props[f.key] || ''} onChange={(v) => store.updateComponentProps(component.id, { [f.key]: v })} />
+            </div>
+          ))}
+        </Section>
+      )}
+
     </div>
   )
 }

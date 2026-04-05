@@ -29,6 +29,11 @@ export type ComponentProps = {
   height?: string
   borderRadius?: string
   borderColor?: string
+  borderWidth?: string
+  borderStyle?: string
+  opacity?: string
+  boxShadow?: string
+  backdropBlur?: string
   href?: string
   src?: string
   alt?: string
@@ -61,6 +66,8 @@ export type Project = {
   stack: StackConfig
   createdAt: string
   updatedAt: string
+  canvasHeight?: number
+  canvasBackground?: string
   components?: CanvasComponent[]
 }
 

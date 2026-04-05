@@ -15,6 +15,7 @@ type CanvasStore = {
   logicEditorOpen: boolean
   logicEditorTarget: string | null
   canvasHeight: number
+  canvasBackground: string
 
   setProject: (project: Project) => void
   setComponents: (components: CanvasComponent[]) => void
@@ -30,6 +31,7 @@ type CanvasStore = {
   saveLogic: (id: string, logic: string) => void
   updateProjectStack: (stack: StackConfig) => void
   setCanvasHeight: (height: number) => void
+  setCanvasBackground: (background: string) => void
 }
 
 export const useCanvasStore = create<CanvasStore>((set) => ({
@@ -39,8 +41,13 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
   logicEditorOpen: false,
   logicEditorTarget: null,
   canvasHeight: 900,
+  canvasBackground: 'solid:#ffffff',
 
-  setProject: (project) => set({ project }),
+  setProject: (project) => set({ 
+    project, 
+    canvasHeight: project.canvasHeight || 900,
+    canvasBackground: project.canvasBackground || 'solid:#ffffff'
+  }),
   setComponents: (components) => set({ components }),
 
   addComponent: (component) =>
@@ -106,4 +113,5 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     })),
 
   setCanvasHeight: (height) => set({ canvasHeight: height }),
+  setCanvasBackground: (background) => set({ canvasBackground: background }),
 }))

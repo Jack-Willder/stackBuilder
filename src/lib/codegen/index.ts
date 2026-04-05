@@ -17,6 +17,12 @@ function propsToStyle(comp: CanvasComponent): string {
   if (p.padding) styles.push(`padding: '${p.padding}'`)
   if (p.margin) styles.push(`margin: '${p.margin}'`)
   if (p.borderRadius) styles.push(`borderRadius: '${p.borderRadius}'`)
+  if (p.borderColor) styles.push(`borderColor: '${p.borderColor}'`)
+  if (p.borderWidth) styles.push(`borderWidth: '${p.borderWidth}'`)
+  if (p.borderStyle) styles.push(`borderStyle: '${p.borderStyle}'`)
+  if (p.opacity) styles.push(`opacity: ${Number(p.opacity) / 100}`)
+  if (p.boxShadow) styles.push(`boxShadow: '${p.boxShadow}'`)
+  if (p.backdropBlur) styles.push(`backdropFilter: 'blur(${p.backdropBlur}px)'`)
   
   // Geometry properties
   if (x !== undefined) styles.push(`left: ${x}`)
@@ -136,8 +142,14 @@ function renderComponent(comp: CanvasComponent): string {
 export function generateReactVite(
   projectName: string,
   components: CanvasComponent[],
-  stack: StackConfig
+  stack: StackConfig,
+  canvasHeight: number = 900,
+  canvasBackground: string = 'solid:#ffffff'
 ): GeneratedFile[] {
+  const bg = canvasBackground.startsWith('solid:') 
+    ? canvasBackground.split(':')[1] 
+    : canvasBackground.split(':', 2)[1]
+
   const componentJSX = components.map(renderComponent).join('\n\n')
 
   const appTsx = `import React from 'react'
@@ -145,8 +157,8 @@ import './index.css'
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50 relative overflow-hidden" style={{ width: '800px', margin: '0 auto' }}>
-${componentJSX || '      <div className="flex items-center justify-center h-screen text-gray-400">No components yet</div>'}
+    <div className="min-h-screen relative overflow-hidden" style={{ width: '800px', margin: '0 auto', height: '${canvasHeight}px', background: '${bg}' }}>
+${componentJSX || '      <div className="flex items-center justify-center h-full text-gray-400">No components yet</div>'}
     </div>
   )
 }
@@ -311,14 +323,20 @@ npm run dev
 export function generateNextJs(
   projectName: string,
   components: CanvasComponent[],
-  stack: StackConfig
+  stack: StackConfig,
+  canvasHeight: number = 900,
+  canvasBackground: string = 'solid:#ffffff'
 ): GeneratedFile[] {
+  const bg = canvasBackground.startsWith('solid:') 
+    ? canvasBackground.split(':')[1] 
+    : canvasBackground.split(':', 2)[1]
+
   const componentJSX = components.map(renderComponent).join('\n\n')
 
   const pageTsx = `export default function Page() {
   return (
-    <main className="min-h-screen bg-gray-50 relative overflow-hidden mx-auto" style={{ width: '800px' }}>
-${componentJSX || '      <div className="flex items-center justify-center h-screen text-gray-400">No components yet</div>'}
+    <main className="min-h-screen relative overflow-hidden mx-auto" style={{ width: '800px', height: '${canvasHeight}px', background: '${bg}' }}>
+${componentJSX || '      <div className="flex items-center justify-center h-full text-gray-400">No components yet</div>'}
     </main>
   )
 }
@@ -492,10 +510,12 @@ router.get('/hello', (req, res) => {
 export function generateProject(
   projectName: string,
   components: CanvasComponent[],
-  stack: StackConfig
+  stack: StackConfig,
+  canvasHeight: number = 900,
+  canvasBackground: string = 'solid:#ffffff'
 ): GeneratedFile[] {
   if (stack.frontend === 'nextjs') {
-    return generateNextJs(projectName, components, stack)
+    return generateNextJs(projectName, components, stack, canvasHeight, canvasBackground)
   }
-  return generateReactVite(projectName, components, stack)
+  return generateReactVite(projectName, components, stack, canvasHeight, canvasBackground)
 }

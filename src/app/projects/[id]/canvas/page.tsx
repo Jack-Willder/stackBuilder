@@ -420,7 +420,9 @@ export default function CanvasPage() {
             style={{
               width: 800,
               height: store.canvasHeight,
-              background: '#fff',
+              background: store.canvasBackground.startsWith('solid:') 
+                ? store.canvasBackground.split(':')[1] 
+                : store.canvasBackground.split(':', 2)[1],
               position: 'relative',
               boxShadow: '0 12px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
               borderRadius: 2,
